@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         pick ur noa lesson
+// @name         pick ur noa lesson unwrap
 // @namespace    http://tampermonkey.net/
 // @version      2024-04-22
 // @description  Make ur own noa dance acadamy schedule.
@@ -46,129 +46,22 @@ async function main() {
   var mutationCount = 0;
   const config = { childList: true, subtree: true };
 
-  (function () {
-    addStyle();
-    createSelectAllNode();
-    createLevelsNode();
-    createTimeNode();
-    createBtnsNode();
+  // (function () {
+  addStyle();
+  createSelectAllNode();
+  createLevelsNode();
+  createTimeNode();
+  createBtnsNode();
 
-    const observer = new MutationObserver((mutationsList, observer) => {
-      mutationCount++;
-      console.log(mutationCount);
-      console.log(selectedValues);
-      if (mutationCount === 1) {
-        initOriginSearch();
-      }
+  searchBtn.addEventListener("click", () => {
+    handleMutation();
+  });
 
-      //init lessons
-      const classBoxes = document.querySelectorAll(".class-box");
-      classBoxes.forEach((classBox) => {
-        customizedSearch(classBox);
+  const observer = new MutationObserver(handleMutation);
 
-        //create lesson shoose type radios
-        createChooseBoxes(classBox);
-
-        classBox.classList.add("unchosenLesson");
-
-        //init and rememer ur chosen lessons
-        const chooseBoxes = classBox.querySelectorAll(".chooseUr");
-        chooseBoxes &&
-          chooseBoxes.forEach((radio) => {
-            const classBox = radio.parentNode.parentNode;
-
-            //init chosen lessons
-            if (chosenLessons.length > 0) {
-              if (chosenLessons.includes(radio.id) && !radio.checked) {
-                radio.checked = true;
-                if (radio.value === "main") {
-                  classBox.style.backgroundColor = "rgba(52, 206, 180, 0.6)";
-                } else {
-                  classBox.style.backgroundColor = "rgba(52, 206, 180, 0.2)";
-                }
-              }
-              if (chosenLessons.includes(radio.id)) {
-                console.log(classBox);
-                classBox.classList.remove("unchosenLesson");
-              }
-            }
-
-            radio.addEventListener("mousedown", function (event) {
-              const lessonid = radio.id;
-              // unchecked
-              if (this.checked) {
-                const handleMouseUp = () => {
-                  setTimeout(() => {
-                    radio.checked = false;
-                    classBox.style.backgroundColor = "#fff";
-                    classBox.classList.add("unchosenLesson");
-                    //delete from chosen lessons
-                    const index = chosenLessons.indexOf(lessonid);
-                    if (index !== -1) {
-                      chosenLessons.splice(index, 1);
-                    }
-                  }, 5);
-                  radio.removeEventListener("mouseup", handleMouseUp);
-                };
-                radio.addEventListener("mouseup", handleMouseUp);
-              } else {
-                //checked
-                if (radio.value === "main") {
-                  classBox.style.backgroundColor = "rgba(52, 206, 180, 0.6)";
-                } else {
-                  classBox.style.backgroundColor = "rgba(52, 206, 180, 0.2)";
-                }
-                classBox.classList.remove("unchosenLesson");
-                //add to chosen lessons
-                if (!chosenLessons.includes(lessonid)) {
-                  chosenLessons.push(lessonid);
-                  if (radio.value === "main") {
-                    const index = chosenLessons.indexOf("opt" + radio.name);
-                    if (index !== -1) {
-                      chosenLessons.splice(index, 1);
-                    }
-                  } else {
-                    const index = chosenLessons.indexOf("main" + radio.name);
-                    if (index !== -1) {
-                      chosenLessons.splice(index, 1);
-                    }
-                  }
-                }
-              }
-              console.log(chosenLessons);
-            });
-          });
-
-        //init show or not
-        if (selectedValues.chosenLessonOnly) {
-          const unChosenLessons = document.querySelectorAll(".unchosenLesson");
-          unChosenLessons.forEach((unChosenLesson) => {
-            unChosenLesson.classList.add("dontShowThis");
-          });
-        }
-
-        //show or not
-        const displayBtn = document.getElementById("displayBtn");
-        displayBtn.addEventListener("change", () => {
-          if (displayBtn.checked) {
-            const unChosenLessons =
-              document.querySelectorAll(".unchosenLesson");
-            unChosenLessons.forEach((unChosenLesson) => {
-              unChosenLesson.classList.add("dontShowThis");
-            });
-          } else {
-            const dontShowThis = document.querySelectorAll(".dontShowThis");
-            dontShowThis.forEach((a) => {
-              a.classList.remove("dontShowThis");
-            });
-          }
-        });
-      });
-    });
-
-    // 启动 MutationObserver，开始监视目标节点的变化
-    observer.observe(targetNode, config);
-  })();
+  // 启动 MutationObserver，开始监视目标节点的变化
+  observer.observe(targetNode, config);
+  // })();
 
   function createLevelsNode() {
     const levelHTML = `<p>LEVEL</p>
@@ -434,6 +327,8 @@ async function main() {
             compareTimes(endTime, selectedValues.toTime))))
     ) {
       classBox.classList.add("unmatchCustomizedLimits");
+    } else {
+      classBox.classList.remove("unmatchCustomizedLimits");
     }
   }
 
@@ -459,6 +354,118 @@ async function main() {
     if (!classBox.querySelector(".chooseUr")) {
       classBox.insertAdjacentHTML("beforeend", radiosHTML);
     }
+  }
+
+  function handleMutation() {
+    mutationCount++;
+    console.log(mutationCount);
+    console.log(selectedValues);
+    if (mutationCount === 1) {
+      initOriginSearch();
+    }
+
+    //init lessons
+    const classBoxes = document.querySelectorAll(".class-box");
+    classBoxes.forEach((classBox) => {
+      customizedSearch(classBox);
+
+      //create lesson shoose type radios
+      createChooseBoxes(classBox);
+
+      classBox.classList.add("unchosenLesson");
+
+      //init and rememer ur chosen lessons
+      const chooseBoxes = classBox.querySelectorAll(".chooseUr");
+      chooseBoxes &&
+        chooseBoxes.forEach((radio) => {
+          const classBox = radio.parentNode.parentNode;
+
+          //init chosen lessons
+          if (chosenLessons.length > 0) {
+            if (chosenLessons.includes(radio.id) && !radio.checked) {
+              radio.checked = true;
+              if (radio.value === "main") {
+                classBox.style.backgroundColor = "rgba(52, 206, 180, 0.6)";
+              } else {
+                classBox.style.backgroundColor = "rgba(52, 206, 180, 0.2)";
+              }
+            }
+            if (chosenLessons.includes(radio.id)) {
+              console.log(classBox);
+              classBox.classList.remove("unchosenLesson");
+            }
+          }
+
+          radio.addEventListener("mousedown", function (event) {
+            const lessonid = radio.id;
+            // unchecked
+            if (this.checked) {
+              const handleMouseUp = () => {
+                setTimeout(() => {
+                  radio.checked = false;
+                  classBox.style.backgroundColor = "#fff";
+                  classBox.classList.add("unchosenLesson");
+                  //delete from chosen lessons
+                  const index = chosenLessons.indexOf(lessonid);
+                  if (index !== -1) {
+                    chosenLessons.splice(index, 1);
+                  }
+                }, 5);
+                radio.removeEventListener("mouseup", handleMouseUp);
+              };
+              radio.addEventListener("mouseup", handleMouseUp);
+            } else {
+              //checked
+              if (radio.value === "main") {
+                classBox.style.backgroundColor = "rgba(52, 206, 180, 0.6)";
+              } else {
+                classBox.style.backgroundColor = "rgba(52, 206, 180, 0.2)";
+              }
+              classBox.classList.remove("unchosenLesson");
+              //add to chosen lessons
+              if (!chosenLessons.includes(lessonid)) {
+                chosenLessons.push(lessonid);
+                if (radio.value === "main") {
+                  const index = chosenLessons.indexOf("opt" + radio.name);
+                  if (index !== -1) {
+                    chosenLessons.splice(index, 1);
+                  }
+                } else {
+                  const index = chosenLessons.indexOf("main" + radio.name);
+                  if (index !== -1) {
+                    chosenLessons.splice(index, 1);
+                  }
+                }
+              }
+            }
+            console.log(chosenLessons);
+          });
+        });
+
+      //init show or not
+      if (selectedValues.chosenLessonOnly) {
+        const unChosenLessons = document.querySelectorAll(".unchosenLesson");
+        unChosenLessons.forEach((unChosenLesson) => {
+          unChosenLesson.classList.add("dontShowThis");
+        });
+      }
+
+      //show or not
+      const displayBtn = document.getElementById("displayBtn");
+      displayBtn.addEventListener("change", () => {
+        if (displayBtn.checked) {
+          const unChosenLessons = document.querySelectorAll(".unchosenLesson");
+          unChosenLessons.forEach((unChosenLesson) => {
+            unChosenLesson.classList.add("dontShowThis");
+          });
+        } else {
+          const dontShowThis = document.querySelectorAll(".dontShowThis");
+          dontShowThis.forEach((a) => {
+            a.classList.remove("dontShowThis");
+          });
+        }
+      });
+    });
   }
 
   function splitTimeRange(timeRange) {
