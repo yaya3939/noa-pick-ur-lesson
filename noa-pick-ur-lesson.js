@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         pick ur noa lesson unwrap
+// @name         pick ur noa lesson
 // @namespace    http://tampermonkey.net/
 // @version      2024-04-22
 // @description  Make ur own noa dance acadamy schedule.
@@ -396,6 +396,7 @@ async function main() {
             }
           }
 
+          //only work when click the circle
           radio.addEventListener("mousedown", function (event) {
             const lessonid = radio.id;
             // unchecked
@@ -414,7 +415,12 @@ async function main() {
                 radio.removeEventListener("mouseup", handleMouseUp);
               };
               radio.addEventListener("mouseup", handleMouseUp);
-            } else {
+            }
+          });
+
+          radio.addEventListener("change", function (event) {
+            const lessonid = radio.id;
+            if (this.checked) {
               //checked
               if (radio.value === "main") {
                 classBox.style.backgroundColor = "rgba(52, 206, 180, 0.6)";
