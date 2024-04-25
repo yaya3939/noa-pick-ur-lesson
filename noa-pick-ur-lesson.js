@@ -1,14 +1,17 @@
 // ==UserScript==
 // @name         pick ur noa lesson
 // @namespace    http://tampermonkey.net/
-// @version      2024-04-22
+// @version      Alpha-v1
 // @description  Make ur own noa dance acadamy schedule.
-// @author       ahiru
+// @author       yachang
 // @match        https://www.noadance.com/schedule_search/*
 // @grant        GM.setValue
 // @grant        GM.getValue
 // @grant        GM.deleteValue
 // @grant        GM.addStyle
+// @license MIT
+// @downloadURL https://update.greasyfork.org/scripts/493350/pick%20ur%20noa%20lesson.user.js
+// @updateURL https://update.greasyfork.org/scripts/493350/pick%20ur%20noa%20lesson.meta.js
 // ==/UserScript==
 
 async function main() {
@@ -22,31 +25,53 @@ async function main() {
   const searchBtn = searchbox.querySelector(".conf").querySelector("button");
   const targetNode = document.getElementById("js-container");
 
-  //chosen lessons
-  const storedString0 = await GM.getValue("chosenLessons", null);
-  const storedSelectedValues0 = JSON.parse(storedString0);
-  const chosenLessons = storedSelectedValues0 ? storedSelectedValues0 : [];
+  const title = document.createElement("p");
+  title.textContent = "enjoy ur dance^^";
+  title.setAttribute(
+    "style",
+    "color: rgb(52, 206, 202);text-align: center;font-size: x-large;font-weight: 800;background: #efefef;padding-top: 20px;"
+  );
+  targetNode.parentNode.insertBefore(title, targetNode);
 
-  //customized search values
-  const storedString = await GM.getValue("selectedValues", null);
-  const storedSelectedValues = JSON.parse(storedString);
-  const selectedValues = storedSelectedValues
-    ? storedSelectedValues
-    : {
-        levels: [],
-        fromTime: "",
-        toTime: "",
-        workdayOnly: false,
-        locations: [],
-        genres: [],
-        chosenLessonOnly: false,
-      };
+  var chosenLessons;
+  try {
+    //chosen lessons
+    const storedString0 = await GM.getValue("chosenLessons", null);
+    const storedSelectedValues0 = storedString0
+      ? JSON.parse(storedString0)
+      : undefined;
+    chosenLessons = storedSelectedValues0 ? storedSelectedValues0 : [];
+  } catch (error) {
+    alert(error);
+  }
+
+  var selectedValues;
+  var selectedValuesLast;
+  try {
+    //customized search values
+    const storedString = await GM.getValue("selectedValues", null);
+    const storedSelectedValues = storedString
+      ? JSON.parse(storedString)
+      : undefined;
+    selectedValues = storedSelectedValues
+      ? storedSelectedValues
+      : {
+          levels: [],
+          fromTime: "",
+          toTime: "",
+          workdayOnly: false,
+          locations: [],
+          genres: [],
+          chosenLessonOnly: false,
+        };
+  } catch (error) {
+    alert(error);
+  }
 
   //others
   var mutationCount = 0;
   const config = { childList: true, subtree: true };
 
-  // (function () {
   addStyle();
   createSelectAllNode();
   createLevelsNode();
@@ -54,14 +79,17 @@ async function main() {
   createBtnsNode();
 
   searchBtn.addEventListener("click", () => {
-    handleMutation();
+    if (
+      selectedValuesLast &&
+      arraysAreEqual(selectedValues.locations, selectedValuesLast.locations) &&
+      arraysAreEqual(selectedValues.genres, selectedValuesLast.genres)
+    ) {
+      handleMutation();
+    }
   });
 
   const observer = new MutationObserver(handleMutation);
-
-  // 启动 MutationObserver，开始监视目标节点的变化
   observer.observe(targetNode, config);
-  // })();
 
   function createLevelsNode() {
     const levelHTML = `<p>LEVEL</p>
@@ -237,40 +265,69 @@ async function main() {
       //remember displayBtn value
       selectedValues.chosenLessonOnly = displayBtn.checked;
 
-      //store selectedValues to local
-      const jsonSelectedValues = JSON.stringify(selectedValues);
-      await GM.setValue("selectedValues", jsonSelectedValues);
+      try {
+        //store selectedValues to local
+        const jsonSelectedValues = JSON.stringify(selectedValues);
+        await GM.setValue("selectedValues", jsonSelectedValues);
 
-      //chosenLessons
-      const jsonChosenLessons = JSON.stringify(chosenLessons);
-      console.log(jsonChosenLessons);
-      await GM.setValue("chosenLessons", jsonChosenLessons);
-      console.log("saved");
+        //chosenLessons
+        const jsonChosenLessons = JSON.stringify(chosenLessons);
+        await GM.setValue("chosenLessons", jsonChosenLessons);
+        alert("saved");
+      } catch (error) {
+        alert(error);
+      }
     });
 
     deleteBtn.addEventListener("click", async () => {
-      await GM.deleteValue("selectedValues");
-      await GM.deleteValue("chosenLessons");
-      console.log("deleted");
+      try {
+        await GM.deleteValue("selectedValues");
+        await GM.deleteValue("chosenLessons");
+        alert("deleted");
+      } catch (error) {
+        alert(error);
+      }
+    });
+
+    displayBtn.addEventListener("change", () => {
+      if (displayBtn.checked) {
+        const unChosenLessons = document.querySelectorAll(".unchosenLesson");
+        unChosenLessons.forEach((unChosenLesson) => {
+          unChosenLesson.classList.add("dontShowThis");
+          targetNode.scrollIntoView();
+        });
+      } else {
+        const dontShowThis = document.querySelectorAll(".dontShowThis");
+        dontShowThis.forEach((a) => {
+          a.classList.remove("dontShowThis");
+        });
+      }
     });
   }
 
   async function addStyle() {
     const customizedCSS = `
   .unmatchCustomizedLimits {
-      display:none;
+      display:none!important;
+      visibility:hidden;
+      min-height:0;
   }
 
   .unchosenLesson{
-
   }
 
   .dontShowThis {
-      display:none;
+      display:none!important;
+      visibility:hidden;
+      min-height:0;
   }
   `;
 
-    await GM.addStyle(customizedCSS);
+    try {
+      await GM.addStyle(customizedCSS);
+    } catch (error) {
+      alert(error);
+    }
   }
 
   function initOriginSearch() {
@@ -306,7 +363,7 @@ async function main() {
 
   function customizedSearch(classBox) {
     //hide unchosen level lessons && unmatch times lessons
-    const level = classBox.querySelector(".rec_level_name");
+    const level = classBox.querySelector(".rec_level_name").innerText;
 
     const timeRange = classBox.querySelector(".lessontime").innerText;
     const [startTime, endTime] = splitTimeRange(timeRange);
@@ -317,14 +374,16 @@ async function main() {
       ).innerText;
 
     if (
-      (selectedValues.levels.length > 0 &&
-        !selectedValues.levels.includes(level.innerText)) ||
-      ((!workdayOnly.checked ||
+      selectedValues.levels.length > 0 &&
+      !selectedValues.levels.includes(level)
+    ) {
+      classBox.classList.add("unmatchCustomizedLimits");
+    } else if (
+      (!workdayOnly.checked ||
         (workdayOnly.checked && weekday !== "SAT" && weekday !== "SUN")) &&
-        ((selectedValues.fromTime &&
-          compareTimes(selectedValues.fromTime, startTime)) ||
-          (selectedValues.toTime &&
-            compareTimes(endTime, selectedValues.toTime))))
+      ((selectedValues.fromTime &&
+        compareTimes(selectedValues.fromTime, startTime)) ||
+        (selectedValues.toTime && compareTimes(endTime, selectedValues.toTime)))
     ) {
       classBox.classList.add("unmatchCustomizedLimits");
     } else {
@@ -334,45 +393,64 @@ async function main() {
 
   function createChooseBoxes(classBox) {
     const lesson = {
-      time: classBox.querySelector(".lessontime").innerText,
-      name: classBox.querySelector(".nickname").innerText,
-      genre: classBox.querySelector(".genre_sub_name").innerText,
-      level: classBox.querySelector(".rec_level_name").innerText,
-      address: classBox
-        .querySelector(".info")
-        .querySelector("a")
-        .querySelector("span").innerText,
+      time: escapeHtml(classBox.querySelector(".lessontime").innerText),
+      name: escapeHtml(classBox.querySelector(".nickname").innerText),
+      genre: escapeHtml(classBox.querySelector(".genre_sub_name").innerText),
+      level: escapeHtml(classBox.querySelector(".rec_level_name").innerText),
+      address: escapeHtml(
+        classBox.querySelector(".info").querySelector("a").querySelector("span")
+          .innerText
+      ),
     };
     const id = `${lesson.time}${lesson.name}${lesson.genre}${lesson.level}${lesson.address}`;
-    const radiosHTML = `<div>
+    const radiosHTML = `<div class="chooseUrBox">
     <input type="radio" class="chooseUr" name="Choose${id}" id="mainChoose${id}" value="main">
     <label for="mainChoose${id}">main</label>
     <input type="radio" class="chooseUr" name="Choose${id}" id="optChoose${id}" value="opt">
     <label for="optChoose${id}">opt</label>
         </div>`;
-
-    if (!classBox.querySelector(".chooseUr")) {
+    const radiosHTML1 = `
+    <input type="radio" class="chooseUr" name="Choose${id}" id="mainChoose${id}" value="main">
+    <label for="mainChoose${id}">main</label>
+    <input type="radio" class="chooseUr" name="Choose${id}" id="optChoose${id}" value="opt">
+    <label for="optChoose${id}">opt</label>
+       `;
+    observer.disconnect();
+    if (!classBox.querySelector(".chooseUrBox")) {
       classBox.insertAdjacentHTML("beforeend", radiosHTML);
+    } else {
+      classBox.querySelector(".chooseUrBox").innerHTML = radiosHTML1;
     }
+    observer.observe(targetNode, config);
   }
 
   function handleMutation() {
     mutationCount++;
     console.log(mutationCount);
     console.log(selectedValues);
+    console.log(chosenLessons);
     if (mutationCount === 1) {
       initOriginSearch();
+    }
+    selectedValuesLast = selectedValues;
+
+    const displayBtn = document.getElementById("displayBtn");
+    if (displayBtn.checked === true && mutationCount > 2) {
+      //init displayBtn
+      displayBtn.checked = false;
+      const dontShowThis = document.querySelectorAll(".dontShowThis");
+      dontShowThis.forEach((a) => {
+        a.classList.remove("dontShowThis");
+      });
     }
 
     //init lessons
     const classBoxes = document.querySelectorAll(".class-box");
     classBoxes.forEach((classBox) => {
-      customizedSearch(classBox);
-
-      //create lesson shoose type radios
-      createChooseBoxes(classBox);
-
       classBox.classList.add("unchosenLesson");
+      classBox.style.backgroundColor = "#fff";
+      createChooseBoxes(classBox);
+      customizedSearch(classBox);
 
       //init and rememer ur chosen lessons
       const chooseBoxes = classBox.querySelectorAll(".chooseUr");
@@ -382,17 +460,16 @@ async function main() {
 
           //init chosen lessons
           if (chosenLessons.length > 0) {
-            if (chosenLessons.includes(radio.id) && !radio.checked) {
+            if (chosenLessons.includes(radio.id)) {
+              classBox.classList.remove("unchosenLesson");
+              classBox.classList.remove("unmatchCustomizedLimits");
               radio.checked = true;
               if (radio.value === "main") {
                 classBox.style.backgroundColor = "rgba(52, 206, 180, 0.6)";
-              } else {
+              } else if (radio.value === "opt") {
                 classBox.style.backgroundColor = "rgba(52, 206, 180, 0.2)";
               }
-            }
-            if (chosenLessons.includes(radio.id)) {
-              console.log(classBox);
-              classBox.classList.remove("unchosenLesson");
+              console.log("init chosen success");
             }
           }
 
@@ -447,30 +524,6 @@ async function main() {
             console.log(chosenLessons);
           });
         });
-
-      //init show or not
-      if (selectedValues.chosenLessonOnly) {
-        const unChosenLessons = document.querySelectorAll(".unchosenLesson");
-        unChosenLessons.forEach((unChosenLesson) => {
-          unChosenLesson.classList.add("dontShowThis");
-        });
-      }
-
-      //show or not
-      const displayBtn = document.getElementById("displayBtn");
-      displayBtn.addEventListener("change", () => {
-        if (displayBtn.checked) {
-          const unChosenLessons = document.querySelectorAll(".unchosenLesson");
-          unChosenLessons.forEach((unChosenLesson) => {
-            unChosenLesson.classList.add("dontShowThis");
-          });
-        } else {
-          const dontShowThis = document.querySelectorAll(".dontShowThis");
-          dontShowThis.forEach((a) => {
-            a.classList.remove("dontShowThis");
-          });
-        }
-      });
     });
   }
 
@@ -517,6 +570,39 @@ async function main() {
         return true;
       }
     }
+  }
+  function arraysAreEqual(arr1, arr2) {
+    // 如果数组长度不同，直接返回 false
+    if (arr1.length !== arr2.length) {
+      return false;
+    }
+
+    // 对数组进行排序
+    const sortedArr1 = arr1.slice().sort();
+    const sortedArr2 = arr2.slice().sort();
+
+    // 比较排序后的数组是否相等
+    for (let i = 0; i < sortedArr1.length; i++) {
+      // 如果元素不相等，返回 false
+      if (sortedArr1[i] !== sortedArr2[i]) {
+        return false;
+      }
+    }
+
+    // 如果所有元素都相等，则返回 true
+    return true;
+  }
+  function escapeHtml(str) {
+    return str.replace(/[&<>"'\/]/g, function (match) {
+      return {
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#39;",
+        "/": "&#x2F;",
+      }[match];
+    });
   }
 }
 
