@@ -434,16 +434,6 @@ async function main() {
     }
     selectedValuesLast = selectedValues;
 
-    const displayBtn = document.getElementById("displayBtn");
-    if (displayBtn.checked === true && mutationCount > 2) {
-      //init displayBtn
-      displayBtn.checked = false;
-      const dontShowThis = document.querySelectorAll(".dontShowThis");
-      dontShowThis.forEach((a) => {
-        a.classList.remove("dontShowThis");
-      });
-    }
-
     //init lessons
     const classBoxes = document.querySelectorAll(".class-box");
     classBoxes.forEach((classBox) => {
@@ -469,7 +459,6 @@ async function main() {
               } else if (radio.value === "opt") {
                 classBox.style.backgroundColor = "rgba(52, 206, 180, 0.2)";
               }
-              console.log("init chosen success");
             }
           }
 
@@ -525,6 +514,22 @@ async function main() {
           });
         });
     });
+
+    //init show or not
+    if (selectedValues.chosenLessonOnly && mutationCount < 3) {
+      const unChosenLessons = document.querySelectorAll(".unchosenLesson");
+      unChosenLessons.forEach((unChosenLesson) => {
+        unChosenLesson.classList.add("dontShowThis");
+      });
+    } else {
+      const displayBtn = document.getElementById("displayBtn");
+      //init displayBtn
+      displayBtn.checked = false;
+      const dontShowThis = document.querySelectorAll(".dontShowThis");
+      dontShowThis.forEach((a) => {
+        a.classList.remove("dontShowThis");
+      });
+    }
   }
 
   function splitTimeRange(timeRange) {
