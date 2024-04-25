@@ -10,6 +10,7 @@
 // @grant        GM.deleteValue
 // @grant        GM.addStyle
 // @license MIT
+// @inject-into content
 // @downloadURL https://update.greasyfork.org/scripts/493350/pick%20ur%20noa%20lesson.user.js
 // @updateURL https://update.greasyfork.org/scripts/493350/pick%20ur%20noa%20lesson.meta.js
 // ==/UserScript==
